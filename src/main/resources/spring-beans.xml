@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:aop="http://www.springframework.org/schema/aop"
+     xmlns:tx="http://www.springframework.org/schema/tx"
+     xmlns:context="http://www.springframework.org/schema/context"
+     xsi:schemaLocation="
+     http://www.springframework.org/schema/beans 
+     http://www.springframework.org/schema/beans/spring-beans.xsd
+     http://www.springframework.org/schema/tx
+     http://www.springframework.org/schema/tx/spring-tx.xsd
+     http://www.springframework.org/schema/aop 
+     http://www.springframework.org/schema/aop/spring-aop.xsd
+     http://www.springframework.org/schema/context 
+     http://www.springframework.org/schema/context/spring-context.xsd">
+     <!-- 配置数据源 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/BookDB" />
+		<property name="username" value="root" />
+		<property name="password" value="" />
+	</bean>
+	<!-- 配置SessionFactory -->
+	<bean id="sessionFactory"
+	  class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="annotatedClasses">
+			<list>
+				<value>bookmanage.entity.Book</value>
+				<value>bookmanage.entity.User</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+			   <prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>
+			   <prop key="hibernate.show_sql">true</prop>
+			   <prop key="hibernate.format_sql">true</prop>
+			</props>
+		</property>
+	</bean>
+	<!-- 配置hibernateTemplate对象 -->
+	<bean id="hibernateTemplate" class="org.springframework.orm.hibernate3.HibernateTemplate">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<!-- bean注解扫描 -->
+	<context:component-scan base-package="bookmanage"/>
+	
+	<bean id="transactionManager"
+		 	class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+         <tx:attributes>
+             <tx:method name="get*" read-only="true" timeout="60"/>
+             <tx:method name="fetch*" read-only="true" timeout="60"/>
+             <tx:method name="add*" propagation="REQUIRED" timeout="60"/>
+             <tx:method name="update*" propagation="REQUIRED" timeout="60"/>
+             <tx:method name="delete*" propagation="REQUIRED" timeout="60"/>
+             <tx:method name="register" propagation="REQUIRED" timeout="60"/>
+         </tx:attributes>
+    </tx:advice>
+    
+     <aop:config>
+        <aop:advisor
+            pointcut="execution(* bookmanage.biz..*.*(..))"
+            advice-ref="txAdvice"/>
+	</aop:config>
+</beans>
